@@ -117,9 +117,9 @@ oled.text(ip, 0, 16)
 oled.rotate(True)
 oled.show()
 
-utime.sleep(1)
-
-oled.poweroff()
+# utime.sleep(1)
+#
+# oled.poweroff()
 # 
 # oled.fill(0)
 # oled.text("IP Address", 0, 0)
@@ -236,6 +236,8 @@ try:
         
 except OSError as e:
     machine.reset()
-    
-##########################################################
 
+finally:
+    oled.fill(0)
+    oled.show()
+ 
