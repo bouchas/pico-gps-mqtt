@@ -7,6 +7,9 @@ import utime, time
 import math
 import network
 
+from do_connect import *
+
+
 #________________________________________________________
 from ssd1306 import SSD1306_I2C
 #https://github.com/stlehmann/micropython-ssd1306
@@ -19,6 +22,7 @@ from secrets import secrets
 
 #________________________________________________________
 from umqtt.simple import MQTTClient
+#https://www.youtube.com/watch?v=_DO2wHI6JWQ (Node-Red + MQTT + InfluxDB + Grafana)
 #https://github.com/danjperron/PicoWMqttDs18b20/blob/main/main.py
 #https://www.hivemq.com/blog/iot-reading-sensor-data-raspberry-pi-pico-w-micropython-mqtt-node-red/
 #https://github.com/thonny/thonny/issues/2524
@@ -94,22 +98,8 @@ def publish(topic, value):
     client.publish(topic, value)
     #print("publish Done")
 
-
-#network declaration
-# Set country to avoid possible errors / https://randomnerdtutorials.com/micropython-mqtt-esp32-esp8266/
-rp2.country('CA')
-
-wlan = network.WLAN(network.STA_IF)
-wlan.active(True)
-
-#connect using ssid
-wlan.connect(secrets['ssid'],secrets['password'])
-while not wlan.isconnected():
-    #machine.idle() # save power while waiting
-    print('Waiting for connection...')
-    utime.sleep(1.0)
-ip = wlan.ifconfig()[0]
-print(f'IP Address: {ip}')
+# WiFi connection
+ip = do_connect()
 
 oled.fill(0)
 oled.text("IP Address", 0, 0)
@@ -117,61 +107,16 @@ oled.text(ip, 0, 16)
 oled.rotate(True)
 oled.show()
 
-# utime.sleep(1)
-#
-# oled.poweroff()
-# 
-# oled.fill(0)
-# oled.text("IP Address", 0, 0)
-# oled.text(ip, 0, 16)
-# oled.rotate(True)
-# oled.show()
-# 
-# utime.sleep(2)
-# 
-# oled.poweron()
-
-
-# # Wait for connection with 10 second timeout
-# timeout = 10
-# while timeout > 0:
-#     if wlan.status() < 0 or wlan.status() >= 3:
-#         break
-#     timeout -= 1
-#     print('Waiting for connection...')
-#     time.sleep(1)
-#     
-# # Handle connection error
-# # Error meanings
-# # 0  Link Down
-# # 1  Link Join
-# # 2  Link NoIp
-# # 3  Link Up
-# # -1 Link Fail
-# # -2 Link NoNet
-# # -3 Link BadAuth
-# 
-# if wlan.status() != 3:
-#     raise RuntimeError('Wi-Fi connection failed')
-# else:
-#     for i in range(wlan.status()):
-#         led.on()
-#         time.sleep(.1)
-#         led.off()
-#     print('Connected')
-#     status = wlan.ifconfig()
-#     print('ip = ' + status[0])
-    
-
-
-
-
-# client = connectMQTT()
+utime.sleep(2.0)
 
 try:
     client = connectMQTT()
 except OSError as e:
-    machine.reset()
+    oled.fill(0)
+    oled.text('ERROR: connectMQTT', 0, 0)
+    oled.show()
+#     utime.sleep(2.0)
+#     machine.reset()
   
 # Test the distance function
 print('Distance between same points: '+str(distanceInMeterBetweenEarthCoordinates(0,0,0,0)))
@@ -208,22 +153,16 @@ try:
         speed = my_gps.speed_string('kph') #'kph' or 'mph' or 'knot'
         distance = distanceInMeterBetweenEarthCoordinates(float(latitude), float(longitude), float(previousLatitude), float(previousLongitude))
         #_________________________________________________
-#         print('Lat:', latitude)
-#         print('Lng:', longitude)
-#         print('time:', gpsTime)
-#         print('Date:', gpsdate)
-#         print('speed:', speed)
-#         print('Distance:'+ str(distance))
         print(gpsdate+'@'+gpsTime+': '+latitude+', '+longitude+', '+str(distance))
         #_________________________________________________
         oled.fill(0)
         oled.text('Lat:'+ latitude, 0, 0)
         oled.text('Lng:'+ longitude, 0, 12)
-#         oled.text('Speed:'+ speed, 0, 24)
         oled.text('Time:'+ gpsTime, 0, 24)
         oled.text('Date:'+ gpsdate, 0, 36)
         oled.text('Dist:'+ str(distance), 0, 48)
         oled.show()
+        utime.sleep(1.0)
         #_________________________________________________
 
         if distance > 2:
@@ -235,9 +174,12 @@ try:
         utime.sleep(1.0)
         
 except OSError as e:
-    machine.reset()
+    pass
 
 finally:
     oled.fill(0)
+    oled.text('ERROR: main loop!', 0, 0)
     oled.show()
+    utime.sleep(2.0)
+    machine.reset()
  
