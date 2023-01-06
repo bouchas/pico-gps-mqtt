@@ -9,7 +9,6 @@ import network
 
 from do_connect import *
 
-
 #________________________________________________________
 from ssd1306 import SSD1306_I2C
 #https://github.com/stlehmann/micropython-ssd1306
@@ -89,7 +88,7 @@ def connectMQTT():
     client.connect()
     return client
 
-def publish(topic, value):
+def publishMQTT(topic, value):
     # print(topic)
     # print(value)
     # pub_msg = "%5.2f" % value
@@ -169,7 +168,7 @@ try:
             previousLatitude = latitude
             previousLongitude = longitude
             if distance > 1000: distance = 0
-            publish('gps/data','{"lat":'+latitude+',"lon":'+longitude+',"d":'+str(distance)+'}')
+            publishMQTT('gps/data','{"lat":'+latitude+',"lon":'+longitude+',"d":'+str(distance)+'}')
 
         utime.sleep(1.0)
         
